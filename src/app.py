@@ -1439,4 +1439,3 @@ except Exception as error:
     st.error(
         f"程式發生錯誤：{error}"
     )
-```
