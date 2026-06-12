@@ -1,9 +1,14 @@
+
 import joblib
 import numpy as np
 import pandas as pd
 import shap
 import streamlit as st
 
+
+# =========================================================
+# 基本設定
+# =========================================================
 
 MATCH_FILE = "data/results.csv"
 MODEL_FILE = "models/worldcup_model.joblib"
@@ -12,6 +17,10 @@ RECENT_MATCHES = 5
 HEAD_TO_HEAD_LIMIT = 5
 
 
+# =========================================================
+# 球隊中文、英文名稱
+# =========================================================
+
 TEAM_NAME_ZH_TO_EN = {
     "阿根廷": "Argentina",
     "法國": "France",
@@ -19,7 +28,6 @@ TEAM_NAME_ZH_TO_EN = {
     "德國": "Germany",
     "日本": "Japan",
     "南韓": "South Korea",
-    "韓國": "South Korea",
     "西班牙": "Spain",
     "英格蘭": "England",
     "葡萄牙": "Portugal",
@@ -36,7 +44,6 @@ TEAM_NAME_ZH_TO_EN = {
     "丹麥": "Denmark",
     "塞內加爾": "Senegal",
     "澳洲": "Australia",
-    "澳大利亞": "Australia",
     "伊朗": "Iran",
     "沙烏地阿拉伯": "Saudi Arabia",
     "波蘭": "Poland",
@@ -59,7 +66,6 @@ TEAM_NAME_ZH_TO_EN = {
     "冰島": "Iceland",
     "奧地利": "Austria",
     "捷克": "Czech Republic",
-    "捷克共和國": "Czech Republic",
     "希臘": "Greece",
     "土耳其": "Turkey",
     "烏克蘭": "Ukraine",
@@ -75,11 +81,9 @@ TEAM_NAME_ZH_TO_EN = {
     "埃及": "Egypt",
     "奈及利亞": "Nigeria",
     "象牙海岸": "Ivory Coast",
-    "科特迪瓦": "Ivory Coast",
     "南非": "South Africa",
     "紐西蘭": "New Zealand",
     "中國": "China PR",
-    "中國隊": "China PR",
     "北韓": "North Korea",
     "牙買加": "Jamaica",
     "巴拿馬": "Panama",
@@ -92,78 +96,14 @@ TEAM_NAME_ZH_TO_EN = {
 
 
 TEAM_NAME_EN_TO_ZH = {
-    "Argentina": "阿根廷",
-    "France": "法國",
-    "Brazil": "巴西",
-    "Germany": "德國",
-    "Japan": "日本",
-    "South Korea": "南韓",
-    "Spain": "西班牙",
-    "England": "英格蘭",
-    "Portugal": "葡萄牙",
-    "Netherlands": "荷蘭",
-    "Italy": "義大利",
-    "Belgium": "比利時",
-    "Uruguay": "烏拉圭",
-    "Croatia": "克羅埃西亞",
-    "Mexico": "墨西哥",
-    "United States": "美國",
-    "Canada": "加拿大",
-    "Morocco": "摩洛哥",
-    "Switzerland": "瑞士",
-    "Denmark": "丹麥",
-    "Senegal": "塞內加爾",
-    "Australia": "澳洲",
-    "Iran": "伊朗",
-    "Saudi Arabia": "沙烏地阿拉伯",
-    "Poland": "波蘭",
-    "Serbia": "塞爾維亞",
-    "Cameroon": "喀麥隆",
-    "Ghana": "迦納",
-    "Ecuador": "厄瓜多",
-    "Costa Rica": "哥斯大黎加",
-    "Wales": "威爾斯",
-    "Tunisia": "突尼西亞",
-    "Qatar": "卡達",
-    "Chile": "智利",
-    "Colombia": "哥倫比亞",
-    "Paraguay": "巴拉圭",
-    "Peru": "秘魯",
-    "Venezuela": "委內瑞拉",
-    "Sweden": "瑞典",
-    "Norway": "挪威",
-    "Finland": "芬蘭",
-    "Iceland": "冰島",
-    "Austria": "奧地利",
-    "Czech Republic": "捷克",
-    "Greece": "希臘",
-    "Turkey": "土耳其",
-    "Ukraine": "烏克蘭",
-    "Russia": "俄羅斯",
-    "Scotland": "蘇格蘭",
-    "Republic of Ireland": "愛爾蘭",
-    "Northern Ireland": "北愛爾蘭",
-    "Romania": "羅馬尼亞",
-    "Hungary": "匈牙利",
-    "Slovakia": "斯洛伐克",
-    "Slovenia": "斯洛維尼亞",
-    "Algeria": "阿爾及利亞",
-    "Egypt": "埃及",
-    "Nigeria": "奈及利亞",
-    "Ivory Coast": "象牙海岸",
-    "South Africa": "南非",
-    "New Zealand": "紐西蘭",
-    "China PR": "中國",
-    "North Korea": "北韓",
-    "Jamaica": "牙買加",
-    "Panama": "巴拿馬",
-    "Honduras": "宏都拉斯",
-    "Israel": "以色列",
-    "United Arab Emirates": "阿聯酋",
-    "Iraq": "伊拉克",
-    "Jordan": "約旦",
+    english: chinese
+    for chinese, english in TEAM_NAME_ZH_TO_EN.items()
 }
 
+
+# =========================================================
+# 賽事中文名稱
+# =========================================================
 
 TOURNAMENT_ZH = {
     "Friendly": "國際友誼賽",
@@ -186,6 +126,10 @@ TOURNAMENT_ZH = {
 }
 
 
+# =========================================================
+# AI 特徵中文名稱
+# =========================================================
+
 FEATURE_NAME_ZH = {
     "home_win_rate": "第一隊最近勝率",
     "away_win_rate": "第二隊最近勝率",
@@ -204,12 +148,16 @@ FEATURE_NAME_ZH = {
     "diff_avg_goals_against": "兩隊最近場均失球差距",
     "diff_goal_difference": "兩隊最近淨勝球差距",
     "h2h_home_win_rate": "第一隊近期交手勝率",
-    "h2h_draw_rate": "兩隊近期交手平手率",
+    "h2h_draw_rate": "近期交手平手率",
     "h2h_away_win_rate": "第二隊近期交手勝率",
-    "h2h_matches": "兩隊近期交手場數",
+    "h2h_matches": "近期交手場數",
     "h2h_win_rate_difference": "兩隊近期交手勝率差距",
 }
 
+
+# =========================================================
+# 輔助函式
+# =========================================================
 
 def display_team_name(english_name):
     return TEAM_NAME_EN_TO_ZH.get(
@@ -239,6 +187,137 @@ def team_result(goals_for, goals_against):
 
     return 0
 
+
+def result_text(result):
+    if result == 1:
+        return "勝"
+
+    if result == 0:
+        return "和"
+
+    return "敗"
+
+
+# =========================================================
+# 載入資料與模型
+# =========================================================
+
+@st.cache_data
+def load_matches():
+    matches = pd.read_csv(
+        MATCH_FILE,
+        parse_dates=["date"],
+    )
+
+    matches = matches.dropna(
+        subset=[
+            "date",
+            "home_team",
+            "away_team",
+            "home_score",
+            "away_score",
+        ]
+    )
+
+    matches["home_team"] = (
+        matches["home_team"]
+        .astype(str)
+        .str.strip()
+    )
+
+    matches["away_team"] = (
+        matches["away_team"]
+        .astype(str)
+        .str.strip()
+    )
+
+    matches["home_score"] = pd.to_numeric(
+        matches["home_score"],
+        errors="coerce",
+    )
+
+    matches["away_score"] = pd.to_numeric(
+        matches["away_score"],
+        errors="coerce",
+    )
+
+    matches = matches.dropna(
+        subset=[
+            "home_score",
+            "away_score",
+        ]
+    )
+
+    return matches.sort_values(
+        "date"
+    ).reset_index(drop=True)
+
+
+@st.cache_resource
+def load_model():
+    return joblib.load(MODEL_FILE)
+
+
+# =========================================================
+# 建立球隊歷史資料
+# =========================================================
+
+@st.cache_data
+def build_histories(matches):
+    histories = {}
+
+    for _, match in matches.iterrows():
+        home_team = match["home_team"]
+        away_team = match["away_team"]
+
+        home_score = int(match["home_score"])
+        away_score = int(match["away_score"])
+
+        histories.setdefault(home_team, [])
+        histories.setdefault(away_team, [])
+
+        histories[home_team].append(
+            {
+                "date": match["date"],
+                "opponent": away_team,
+                "home_away": "主場",
+                "goals_for": home_score,
+                "goals_against": away_score,
+                "result": team_result(
+                    home_score,
+                    away_score,
+                ),
+                "tournament": match.get(
+                    "tournament",
+                    "",
+                ),
+            }
+        )
+
+        histories[away_team].append(
+            {
+                "date": match["date"],
+                "opponent": home_team,
+                "home_away": "客場",
+                "goals_for": away_score,
+                "goals_against": home_score,
+                "result": team_result(
+                    away_score,
+                    home_score,
+                ),
+                "tournament": match.get(
+                    "tournament",
+                    "",
+                ),
+            }
+        )
+
+    return histories
+
+
+# =========================================================
+# 計算最近比賽統計
+# =========================================================
 
 def calculate_stats(history):
     if not history:
@@ -290,83 +369,68 @@ def calculate_stats(history):
     }
 
 
-@st.cache_data
-def load_matches():
-    matches = pd.read_csv(
-        MATCH_FILE,
-        parse_dates=["date"],
-    )
+# =========================================================
+# 建立最近五場比賽表格
+# =========================================================
 
-    matches = matches.dropna(
-        subset=[
+def create_recent_matches_table(history):
+    rows = []
+
+    for game in reversed(history):
+        game_date = game.get(
             "date",
-            "home_team",
-            "away_team",
-            "home_score",
-            "away_score",
-        ]
-    )
+            "",
+        )
 
-    matches["home_team"] = (
-        matches["home_team"]
-        .astype(str)
-        .str.strip()
-    )
+        if pd.notna(game_date):
+            game_date = pd.to_datetime(
+                game_date
+            ).strftime("%Y-%m-%d")
+        else:
+            game_date = ""
 
-    matches["away_team"] = (
-        matches["away_team"]
-        .astype(str)
-        .str.strip()
-    )
+        opponent = display_team_name(
+            game.get(
+                "opponent",
+                "",
+            )
+        )
 
-    return matches.sort_values(
-        "date"
-    ).reset_index(drop=True)
+        tournament = translate_tournament(
+            game.get(
+                "tournament",
+                "",
+            )
+        )
 
+        score = (
+            f"{int(game['goals_for'])}"
+            f"："
+            f"{int(game['goals_against'])}"
+        )
 
-@st.cache_data
-def build_histories(matches):
-    histories = {}
-
-    for _, match in matches.iterrows():
-        home_team = match["home_team"]
-        away_team = match["away_team"]
-
-        home_score = int(match["home_score"])
-        away_score = int(match["away_score"])
-
-        histories.setdefault(home_team, [])
-        histories.setdefault(away_team, [])
-
-        histories[home_team].append(
+        rows.append(
             {
-                "goals_for": home_score,
-                "goals_against": away_score,
-                "result": team_result(
-                    home_score,
-                    away_score,
+                "日期": game_date,
+                "對手": opponent,
+                "主客場": game.get(
+                    "home_away",
+                    "",
                 ),
+                "比數": score,
+                "結果": result_text(
+                    game["result"]
+                ),
+                "賽事": tournament,
             }
         )
 
-        histories[away_team].append(
-            {
-                "goals_for": away_score,
-                "goals_against": home_score,
-                "result": team_result(
-                    away_score,
-                    home_score,
-                ),
-            }
-        )
-
-    return histories
+    return pd.DataFrame(rows)
 
 
-@st.cache_resource
-def load_model():
-    return joblib.load(MODEL_FILE)
-
+# =========================================================
+# 取得兩隊交手紀錄
+# =========================================================
 
 def get_head_to_head(
     matches,
@@ -413,14 +477,14 @@ def calculate_h2h_stats(
             draws += 1
             continue
 
-        winner = (
-            match["home_team"]
-            if home_score > away_score
-            else match["away_team"]
-        )
+        if home_score > away_score:
+            winner = match["home_team"]
+        else:
+            winner = match["away_team"]
 
         if winner == home_team:
             home_wins += 1
+
         elif winner == away_team:
             away_wins += 1
 
@@ -448,6 +512,10 @@ def calculate_h2h_stats(
         ),
     }
 
+
+# =========================================================
+# 建立模型需要的特徵
+# =========================================================
 
 def create_features(
     home_stats,
@@ -528,13 +596,17 @@ def create_features(
             h2h_stats["h2h_win_rate_difference"],
     }
 
-    row = pd.DataFrame([values])
+    features = pd.DataFrame([values])
 
-    return row.reindex(
+    return features.reindex(
         columns=feature_columns,
         fill_value=0.0,
     )
 
+
+# =========================================================
+# SHAP AI 解釋
+# =========================================================
 
 def format_feature_value(
     feature_name,
@@ -545,8 +617,11 @@ def format_feature_value(
 
     if (
         "rate" in feature_name
-        or feature_name == "diff_win_rate"
-        or feature_name == "h2h_win_rate_difference"
+        or feature_name
+        in {
+            "diff_win_rate",
+            "h2h_win_rate_difference",
+        }
     ):
         return f"{value * 100:.1f}%"
 
@@ -563,6 +638,7 @@ def get_shap_class_values(
     try:
         shap_output = explainer(features)
         shap_values = shap_output.values
+
     except Exception:
         shap_values = explainer.shap_values(
             features
@@ -572,7 +648,7 @@ def get_shap_class_values(
 
     if predicted_class not in class_list:
         raise ValueError(
-            "模型中找不到預測類別"
+            "模型找不到預測類別"
         )
 
     class_index = class_list.index(
@@ -592,14 +668,12 @@ def get_shap_class_values(
         return shap_array[0]
 
     if shap_array.ndim == 3:
-        # 常見新版格式：
-        # (資料筆數, 特徵數, 類別數)
+        # 格式：
+        # 資料筆數、特徵數、類別數
         if (
             shap_array.shape[0] == len(features)
-            and
-            shap_array.shape[1] == len(
-                features.columns
-            )
+            and shap_array.shape[1]
+            == len(features.columns)
         ):
             return shap_array[
                 0,
@@ -607,8 +681,8 @@ def get_shap_class_values(
                 class_index,
             ]
 
-        # 另一種可能格式：
-        # (類別數, 資料筆數, 特徵數)
+        # 格式：
+        # 類別數、資料筆數、特徵數
         if shap_array.shape[0] == len(
             class_list
         ):
@@ -618,8 +692,8 @@ def get_shap_class_values(
                 :,
             ]
 
-        # 另一種可能格式：
-        # (資料筆數, 類別數, 特徵數)
+        # 格式：
+        # 資料筆數、類別數、特徵數
         if shap_array.shape[1] == len(
             class_list
         ):
@@ -630,7 +704,7 @@ def get_shap_class_values(
             ]
 
     raise ValueError(
-        f"無法辨識 SHAP 輸出格式："
+        f"無法辨識 SHAP 格式："
         f"{shap_array.shape}"
     )
 
@@ -643,7 +717,7 @@ def get_model_explanations(
     team2_zh,
     limit=5,
 ):
-    class_values = get_shap_class_values(
+    shap_values = get_shap_class_values(
         model,
         features,
         predicted_class,
@@ -651,34 +725,37 @@ def get_model_explanations(
 
     if predicted_class == 2:
         target_text = f"{team1_zh}獲勝"
+
     elif predicted_class == 0:
         target_text = f"{team2_zh}獲勝"
+
     else:
         target_text = "平手"
 
-    explanation_rows = []
+    rows = []
 
     for index, feature_name in enumerate(
         features.columns
     ):
         impact = float(
-            class_values[index]
+            shap_values[index]
         )
 
-        feature_value = float(
+        value = float(
             features.iloc[0][feature_name]
         )
 
-        if impact > 0:
-            influence_text = (
+        if impact >= 0:
+            influence = (
                 f"提高「{target_text}」的預測"
             )
+
         else:
-            influence_text = (
+            influence = (
                 f"降低「{target_text}」的預測"
             )
 
-        explanation_rows.append(
+        rows.append(
             {
                 "feature": feature_name,
                 "原因": FEATURE_NAME_ZH.get(
@@ -687,22 +764,24 @@ def get_model_explanations(
                 ),
                 "目前數值": format_feature_value(
                     feature_name,
-                    feature_value,
+                    value,
                 ),
-                "影響": influence_text,
+                "影響": influence,
                 "impact": impact,
-                "absolute_impact": abs(impact),
+                "absolute_impact": abs(
+                    impact
+                ),
             }
         )
 
-    explanation_rows.sort(
+    rows.sort(
         key=lambda item: item[
             "absolute_impact"
         ],
         reverse=True,
     )
 
-    return explanation_rows[:limit]
+    return rows[:limit]
 
 
 def build_plain_language_reason(
@@ -711,81 +790,88 @@ def build_plain_language_reason(
     team2_zh,
 ):
     feature = item["feature"]
-    value_text = item["目前數值"]
+    value = item["目前數值"]
     influence = item["影響"]
 
-    feature_sentences = {
+    descriptions = {
         "home_win_rate":
-            f"{team1_zh}最近勝率為{value_text}",
+            f"{team1_zh}最近勝率為{value}",
 
         "away_win_rate":
-            f"{team2_zh}最近勝率為{value_text}",
+            f"{team2_zh}最近勝率為{value}",
 
         "home_draw_rate":
-            f"{team1_zh}最近平手率為{value_text}",
+            f"{team1_zh}最近平手率為{value}",
 
         "away_draw_rate":
-            f"{team2_zh}最近平手率為{value_text}",
+            f"{team2_zh}最近平手率為{value}",
 
         "home_loss_rate":
-            f"{team1_zh}最近敗率為{value_text}",
+            f"{team1_zh}最近敗率為{value}",
 
         "away_loss_rate":
-            f"{team2_zh}最近敗率為{value_text}",
+            f"{team2_zh}最近敗率為{value}",
 
         "home_avg_goals_for":
-            f"{team1_zh}最近場均進球為{value_text}",
+            f"{team1_zh}最近場均進球為{value}",
 
         "away_avg_goals_for":
-            f"{team2_zh}最近場均進球為{value_text}",
+            f"{team2_zh}最近場均進球為{value}",
 
         "home_avg_goals_against":
-            f"{team1_zh}最近場均失球為{value_text}",
+            f"{team1_zh}最近場均失球為{value}",
 
         "away_avg_goals_against":
-            f"{team2_zh}最近場均失球為{value_text}",
+            f"{team2_zh}最近場均失球為{value}",
 
         "home_avg_goal_difference":
-            f"{team1_zh}最近平均淨勝球為{value_text}",
+            f"{team1_zh}最近平均淨勝球為{value}",
 
         "away_avg_goal_difference":
-            f"{team2_zh}最近平均淨勝球為{value_text}",
+            f"{team2_zh}最近平均淨勝球為{value}",
 
         "diff_win_rate":
-            f"兩隊最近勝率差距為{value_text}",
+            f"兩隊最近勝率差距為{value}",
 
         "diff_avg_goals_for":
-            f"兩隊最近場均進球差距為{value_text}",
+            f"兩隊最近場均進球差距為{value}",
 
         "diff_avg_goals_against":
-            f"兩隊最近場均失球差距為{value_text}",
+            f"兩隊最近場均失球差距為{value}",
 
         "diff_goal_difference":
-            f"兩隊最近淨勝球差距為{value_text}",
+            f"兩隊最近淨勝球差距為{value}",
 
         "h2h_home_win_rate":
-            f"{team1_zh}近期交手勝率為{value_text}",
+            f"{team1_zh}近期交手勝率為{value}",
 
         "h2h_draw_rate":
-            f"兩隊近期交手平手率為{value_text}",
+            f"兩隊近期交手平手率為{value}",
 
         "h2h_away_win_rate":
-            f"{team2_zh}近期交手勝率為{value_text}",
+            f"{team2_zh}近期交手勝率為{value}",
 
         "h2h_matches":
-            f"模型參考了兩隊最近{value_text}交手",
+            f"模型參考了兩隊最近{value}交手",
 
         "h2h_win_rate_difference":
-            f"兩隊近期交手勝率差距為{value_text}",
+            f"兩隊近期交手勝率差距為{value}",
     }
 
-    beginning = feature_sentences.get(
+    beginning = descriptions.get(
         feature,
-        f"{item['原因']}為{value_text}",
+        f"{item['原因']}為{value}",
     )
 
-    return f"{beginning}，因此會{influence}。"
+    return (
+        f"{beginning}，"
+        f"因此會{influence}。"
+    )
 
+
+# =========================================================
+# Streamlit 網頁設定
+# =========================================================
 
 st.set_page_config(
     page_title="AI 足球勝率預測",
@@ -837,58 +923,65 @@ st.markdown(
 st.title("⚽ AI 足球勝率預測")
 
 st.markdown(
-    '<div class="subtitle">'
-    '選擇兩支球隊，查看 AI 預測、近期狀態與判斷原因'
-    '</div>',
+    """
+    <div class="subtitle">
+        選擇兩支球隊，查看 AI 預測、近期狀態與判斷原因
+    </div>
+    """,
     unsafe_allow_html=True,
 )
 
+
+# =========================================================
+# 主程式
+# =========================================================
 
 try:
     matches = load_matches()
     histories = build_histories(matches)
 
-    bundle = load_model()
+    model_bundle = load_model()
 
-    model = bundle["model"]
-    feature_columns = bundle[
+    model = model_bundle["model"]
+    feature_columns = model_bundle[
         "feature_columns"
     ]
 
     team_options = sorted(
-        {
-            chinese
-            for chinese, english
+        [
+            chinese_name
+            for chinese_name, english_name
             in TEAM_NAME_ZH_TO_EN.items()
-            if english in histories
-        }
+            if english_name in histories
+        ]
     )
 
     if len(team_options) < 2:
-        st.error("可使用的球隊數量不足")
+        st.error(
+            "資料庫中可使用的球隊不足。"
+        )
         st.stop()
 
-    left_column, right_column = st.columns(2)
+    team_column1, team_column2 = st.columns(2)
 
-    with left_column:
+    with team_column1:
         team1_zh = st.selectbox(
             "選擇第一支球隊",
             team_options,
-            key="team1",
+            index=0,
         )
 
-    with right_column:
+    with team_column2:
         team2_zh = st.selectbox(
             "選擇第二支球隊",
             team_options,
             index=1,
-            key="team2",
         )
 
     if st.button("開始預測"):
         if team1_zh == team2_zh:
             st.error(
-                "請選擇不同的兩支球隊"
+                "請選擇兩支不同的球隊。"
             )
 
         else:
@@ -900,13 +993,15 @@ try:
                 team2_zh
             ]
 
-            home_history = histories[
-                home_team
-            ][-RECENT_MATCHES:]
+            home_history = histories.get(
+                home_team,
+                [],
+            )[-RECENT_MATCHES:]
 
-            away_history = histories[
-                away_team
-            ][-RECENT_MATCHES:]
+            away_history = histories.get(
+                away_team,
+                [],
+            )[-RECENT_MATCHES:]
 
             home_stats = calculate_stats(
                 home_history
@@ -935,11 +1030,9 @@ try:
                 feature_columns,
             )
 
-            probabilities = (
-                model.predict_proba(
-                    features
-                )[0]
-            )
+            probabilities = model.predict_proba(
+                features
+            )[0]
 
             class_probabilities = dict(
                 zip(
@@ -972,15 +1065,15 @@ try:
                 * 100
             )
 
-            results = {
+            result_probabilities = {
                 f"{team1_zh}勝": home_win,
                 "平手": draw,
                 f"{team2_zh}勝": away_win,
             }
 
             most_likely = max(
-                results,
-                key=results.get,
+                result_probabilities,
+                key=result_probabilities.get,
             )
 
             if most_likely == f"{team1_zh}勝":
@@ -992,6 +1085,7 @@ try:
             else:
                 predicted_class = 1
 
+            # 預測結果
             st.subheader("AI 預測結果")
 
             result_column1, result_column2, result_column3 = (
@@ -1017,6 +1111,7 @@ try:
                 f"最可能結果：{most_likely}"
             )
 
+            # AI 判斷原因
             st.subheader("AI 判斷原因")
 
             try:
@@ -1035,7 +1130,7 @@ try:
                     explanation_rows[:3],
                     start=1,
                 ):
-                    reason_text = (
+                    reason = (
                         build_plain_language_reason(
                             item,
                             team1_zh,
@@ -1046,8 +1141,9 @@ try:
                     st.markdown(
                         f"""
                         <div class="reason-card">
-                            <strong>原因 {index}</strong><br>
-                            {reason_text}
+                            <strong>原因 {index}</strong>
+                            <br>
+                            {reason}
                         </div>
                         """,
                         unsafe_allow_html=True,
@@ -1073,8 +1169,8 @@ try:
                     )
 
                 st.caption(
-                    "AI 原因是根據模型特徵影響程度產生，"
-                    "代表模型如何判斷，不代表真正的因果關係。"
+                    "AI 判斷原因代表模型如何解讀歷史數據，"
+                    "不代表真正的因果關係。"
                 )
 
             except Exception as explanation_error:
@@ -1083,82 +1179,132 @@ try:
                     f"{explanation_error}"
                 )
 
+            # 最近五場統計與對手
             st.subheader("最近 5 場數據")
 
-            stats_column1, stats_column2 = (
+            recent_column1, recent_column2 = (
                 st.columns(2)
             )
 
-            with stats_column1:
+            with recent_column1:
                 st.markdown(
                     f"### {team1_zh}"
                 )
 
-                st.write(
-                    f"勝率："
-                    f"{home_stats['win_rate'] * 100:.1f}%"
+                stat1, stat2, stat3 = st.columns(3)
+
+                stat1.metric(
+                    "勝率",
+                    (
+                        f"{home_stats['win_rate'] * 100:.1f}%"
+                    ),
+                )
+
+                stat2.metric(
+                    "平手率",
+                    (
+                        f"{home_stats['draw_rate'] * 100:.1f}%"
+                    ),
+                )
+
+                stat3.metric(
+                    "敗率",
+                    (
+                        f"{home_stats['loss_rate'] * 100:.1f}%"
+                    ),
                 )
 
                 st.write(
-                    f"平手率："
-                    f"{home_stats['draw_rate'] * 100:.1f}%"
-                )
-
-                st.write(
-                    f"敗率："
-                    f"{home_stats['loss_rate'] * 100:.1f}%"
-                )
-
-                st.write(
-                    f"場均進球："
+                    "場均進球："
                     f"{home_stats['avg_goals_for']:.2f}"
                 )
 
                 st.write(
-                    f"場均失球："
+                    "場均失球："
                     f"{home_stats['avg_goals_against']:.2f}"
                 )
 
                 st.write(
-                    f"平均淨勝球："
+                    "平均淨勝球："
                     f"{home_stats['avg_goal_difference']:.2f}"
                 )
 
-            with stats_column2:
+                st.markdown(
+                    "#### 最近比賽對手"
+                )
+
+                home_recent_table = (
+                    create_recent_matches_table(
+                        home_history
+                    )
+                )
+
+                st.dataframe(
+                    home_recent_table,
+                    use_container_width=True,
+                    hide_index=True,
+                )
+
+            with recent_column2:
                 st.markdown(
                     f"### {team2_zh}"
                 )
 
-                st.write(
-                    f"勝率："
-                    f"{away_stats['win_rate'] * 100:.1f}%"
+                stat1, stat2, stat3 = st.columns(3)
+
+                stat1.metric(
+                    "勝率",
+                    (
+                        f"{away_stats['win_rate'] * 100:.1f}%"
+                    ),
+                )
+
+                stat2.metric(
+                    "平手率",
+                    (
+                        f"{away_stats['draw_rate'] * 100:.1f}%"
+                    ),
+                )
+
+                stat3.metric(
+                    "敗率",
+                    (
+                        f"{away_stats['loss_rate'] * 100:.1f}%"
+                    ),
                 )
 
                 st.write(
-                    f"平手率："
-                    f"{away_stats['draw_rate'] * 100:.1f}%"
-                )
-
-                st.write(
-                    f"敗率："
-                    f"{away_stats['loss_rate'] * 100:.1f}%"
-                )
-
-                st.write(
-                    f"場均進球："
+                    "場均進球："
                     f"{away_stats['avg_goals_for']:.2f}"
                 )
 
                 st.write(
-                    f"場均失球："
+                    "場均失球："
                     f"{away_stats['avg_goals_against']:.2f}"
                 )
 
                 st.write(
-                    f"平均淨勝球："
+                    "平均淨勝球："
                     f"{away_stats['avg_goal_difference']:.2f}"
                 )
 
+                st.markdown(
+                    "#### 最近比賽對手"
+                )
+
+                away_recent_table = (
+                    create_recent_matches_table(
+                        away_history
+                    )
+                )
+
+                st.dataframe(
+                    away_recent_table,
+                    use_container_width=True,
+                    hide_index=True,
+                )
+
+            # 交手統計
             st.subheader("近期交手統計")
 
             h2h_column1, h2h_column2, h2h_column3 = (
@@ -1187,15 +1333,16 @@ try:
             )
 
             st.write(
-                f"模型參考的直接交手場數："
+                "模型參考的直接交手場數："
                 f"{h2h_stats['h2h_matches']} 場"
             )
 
+            # 交手紀錄表
             st.subheader("近期交手紀錄")
 
             if h2h_matches.empty:
                 st.info(
-                    "找不到兩隊交手紀錄"
+                    "找不到兩隊近期交手紀錄。"
                 )
 
             else:
@@ -1211,35 +1358,37 @@ try:
                 ].copy()
 
                 h2h_table["home_team"] = (
-                    h2h_table[
-                        "home_team"
-                    ].map(
+                    h2h_table["home_team"].map(
                         display_team_name
                     )
                 )
 
                 h2h_table["away_team"] = (
-                    h2h_table[
-                        "away_team"
-                    ].map(
+                    h2h_table["away_team"].map(
                         display_team_name
                     )
                 )
 
                 h2h_table["tournament"] = (
-                    h2h_table[
-                        "tournament"
-                    ].map(
+                    h2h_table["tournament"].map(
                         translate_tournament
                     )
                 )
 
                 h2h_table["date"] = (
-                    h2h_table[
-                        "date"
-                    ].dt.strftime(
+                    h2h_table["date"].dt.strftime(
                         "%Y-%m-%d"
                     )
+                )
+
+                h2h_table["比分"] = (
+                    h2h_table[
+                        "home_score"
+                    ].astype(int).astype(str)
+                    + "："
+                    + h2h_table[
+                        "away_score"
+                    ].astype(int).astype(str)
                 )
 
                 h2h_table = h2h_table.rename(
@@ -1247,11 +1396,19 @@ try:
                         "date": "日期",
                         "home_team": "主隊",
                         "away_team": "客隊",
-                        "home_score": "主隊進球",
-                        "away_score": "客隊進球",
                         "tournament": "賽事",
                     }
                 )
+
+                h2h_table = h2h_table[
+                    [
+                        "日期",
+                        "主隊",
+                        "比分",
+                        "客隊",
+                        "賽事",
+                    ]
+                ]
 
                 st.dataframe(
                     h2h_table,
@@ -1260,16 +1417,26 @@ try:
                 )
 
             st.caption(
-                "提醒：預測根據歷史比賽資料與模型計算，"
+                "提醒：預測是依據歷史比賽資料與模型計算，"
                 "不能保證實際比賽結果。"
             )
+
 
 except FileNotFoundError as error:
     st.error(
         f"找不到必要檔案：{error}"
     )
 
+
+except KeyError as error:
+    st.error(
+        "模型檔案或資料欄位格式不正確："
+        f"{error}"
+    )
+
+
 except Exception as error:
     st.error(
         f"程式發生錯誤：{error}"
-         )
+    )
+```
